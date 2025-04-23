@@ -1,7 +1,6 @@
 import Binding from '../services/binding';
 import UiFrame from '../services/ui-frame';
 import FrameBridgeClient from '../services/frame-bridge-client';
-import { fetchLocalization } from '../services/localization-fetcher';
 
 export default class NotificationController {
     public onClose?: () => void;
@@ -12,27 +11,7 @@ export default class NotificationController {
 
     constructor(context: Binding) {
         this._context = context;
-        this._frame = new UiFrame(
-            async (lang) =>
-                `<!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <meta charset="utf-8" />
-                        <meta name="viewport" content="width=device-width, initial-scale=1" />
-                        <title>asbplayer</title>
-                        <style>
-                        @import url(${browser.runtime.getURL('/fonts/fonts.css')});
-                        </style>
-                    </head>
-                    <body>
-                        <div id="root" style="width:100%;height:100vh;"></div>
-                        <script type="application/json" id="loc">${JSON.stringify(
-                            await fetchLocalization(lang)
-                        )}</script>
-                        <script type="module" src="${browser.runtime.getURL('/notification-ui.js')}"></script>
-                    </body>
-                </html>`
-        );
+        this._frame = new UiFrame(context.ctx, '/notification-ui.html');
     }
 
     get showing() {

@@ -17,27 +17,7 @@ import { base64ToBlob, bufferToBase64 } from '@project/common/base64';
 import Binding from '../services/binding';
 import { currentPageDelegate } from '../services/pages';
 import UiFrame from '../services/ui-frame';
-import { fetchLocalization } from '../services/localization-fetcher';
 import i18n from 'i18next';
-
-async function html(lang: string) {
-    return `<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="utf-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <title>asbplayer - Video Data Sync</title>
-                <style>
-                    @import url(${browser.runtime.getURL('/fonts/fonts.css')});
-                </style>
-            </head>
-            <body>
-                <div id="root" style="width:100%;height:100vh;"></div>
-                <script type="application/json" id="loc">${JSON.stringify(await fetchLocalization(lang))}</script>
-                <script type="module" src="${browser.runtime.getURL('/video-data-sync-ui.js')}"></script>
-            </body>
-            </html>`;
-}
 
 interface ShowOptions {
     reason: VideoDataUiOpenReason;
@@ -85,7 +65,7 @@ export default class VideoDataSyncController {
             extension: 'srt',
         };
         this._domain = new URL(window.location.href).host;
-        this._frame = new UiFrame(html);
+        this._frame = new UiFrame(context.ctx, '/video-data-sync-ui.html');
     }
 
     private get lastLanguagesSynced(): string[] {

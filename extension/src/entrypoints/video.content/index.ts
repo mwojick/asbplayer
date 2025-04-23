@@ -119,7 +119,7 @@ export default defineContentScript({
                         hasValidVideoSource(videoElement, page) &&
                         !page?.shouldIgnore(videoElement)
                     ) {
-                        const b = new Binding(videoElement, hasPageScript, frameInfoBroadcaster?.frameId);
+                        const b = new Binding(ctx, videoElement, hasPageScript, frameInfoBroadcaster?.frameId);
                         b.bind();
                         bindings.push(b);
                     }
@@ -157,10 +157,10 @@ export default defineContentScript({
                 ? setInterval(incrementallyFindShadowRoots, 100)
                 : undefined;
 
-            const videoSelectController = new VideoSelectController(bindings);
+            const videoSelectController = new VideoSelectController(ctx, bindings);
             videoSelectController.bind();
 
-            const ankiUiController = new TabAnkiUiController(settingsProvider);
+            const ankiUiController = new TabAnkiUiController(ctx, settingsProvider);
 
             if (isParentDocument) {
                 bindToggleSidePanel();

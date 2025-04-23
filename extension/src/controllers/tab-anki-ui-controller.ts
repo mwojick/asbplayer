@@ -13,43 +13,20 @@ import {
 import { AnkiSettings, SettingsProvider, ankiSettingsKeys } from '@project/common/settings';
 import { sourceString } from '@project/common/util';
 import UiFrame from '../services/ui-frame';
-import { fetchLocalization } from '../services/localization-fetcher';
 import { Mp3Encoder } from '@project/common/audio-clip';
 import { base64ToBlob, blobToBase64 } from '@project/common/base64';
 import { mp3WorkerFactory } from '../services/mp3-worker-factory';
 import { ExtensionGlobalStateProvider } from '../services/extension-global-state-provider';
+import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
 const globalStateProvider = new ExtensionGlobalStateProvider();
-
-// We need to write the HTML into the iframe manually so that the iframe keeps it's about:blank URL.
-// Otherwise, Chrome won't insert content scripts into the iframe (e.g. Yomichan won't work).
-async function html(language: string) {
-    return `<!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="utf-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1" />
-                    <title>asbplayer - Anki</title>
-                    <style>
-                        @import url(${browser.runtime.getURL('/fonts/fonts.css')});
-                    </style>
-                </head>
-                <body>
-                    <div id="root" style="width:100%;height:100vh;"></div>
-                    <script type="application/json" id="loc">${JSON.stringify(
-                        await fetchLocalization(language)
-                    )}</script>
-                    <script type="module" src="${browser.runtime.getURL('/anki-ui.js')}"></script>
-                </body>
-            </html>`;
-}
 
 export class TabAnkiUiController {
     private readonly _frame: UiFrame;
     private readonly _settings: SettingsProvider;
 
-    constructor(settings: SettingsProvider) {
-        this._frame = new UiFrame(html);
+    constructor(ctx: ContentScriptContext, settings: SettingsProvider) {
+        this._frame = new UiFrame(ctx, '/anki-ui.html');
         this._settings = settings;
     }
 

@@ -1,5 +1,7 @@
-import { isFirefoxBuild } from './build-flags';
 import FrameBridgeClient, { FetchOptions } from './frame-bridge-client';
+import { IframeContentScriptUi } from 'wxt/utils/content-script-ui/iframe';
+import type { ContentScriptContext } from 'wxt/utils/content-script-context';
+import type { HtmlPublicPath } from 'wxt/browser';
 
 const frameColorScheme = () => {
     // Prevent iframe from showing up with solid background by selecting suitable color scheme according to document's color scheme
@@ -31,16 +33,19 @@ const frameColorScheme = () => {
 };
 
 export default class UiFrame {
-    private readonly _html: (lang: string) => Promise<string>;
+    private readonly _path: string;
     private _fetchOptions: FetchOptions | undefined;
     private _client: FrameBridgeClient | undefined;
     private _frame: HTMLIFrameElement | undefined;
+    private _ctx: ContentScriptContext;
+    private _ui: IframeContentScriptUi<void> | undefined;
     private _language: string = 'en';
     private _dirty = true;
     private _bound = false;
 
-    constructor(html: (lang: string) => Promise<string>) {
-        this._html = html;
+    constructor(ctx: ContentScriptContext, path: string) {
+        this._ctx = ctx;
+        this._path = path;
     }
 
     set fetchOptions(fetchOptions: FetchOptions) {
@@ -89,31 +94,23 @@ export default class UiFrame {
         this._dirty = false;
         this._bound = true;
         this._client?.unbind();
-        this._frame?.remove();
+        this._ui?.remove();
 
-        this._frame = document.createElement('iframe');
-        this._frame.className = 'asbplayer-ui-frame';
+        this._ui = createIframeUi(this._ctx, {
+            page: `${this._path}?lang=${this._language}` as HtmlPublicPath,
+            position: 'inline',
+            anchor: 'body',
+            onMount: (wrapper, iframe) => {
+                iframe.className = 'asbplayer-ui-frame';
+                iframe.style.colorScheme = frameColorScheme();
+                iframe.setAttribute('allowtransparency', 'true');
+            },
+        });
 
-        this._frame.style.colorScheme = frameColorScheme();
-        this._frame.setAttribute('allowtransparency', 'true');
+        this._ui.mount();
 
+        this._frame = this._ui.iframe;
         this._client = new FrameBridgeClient(this._frame, this._fetchOptions);
-        document.body.appendChild(this._frame);
-
-        if (isFirefoxBuild) {
-            // Firefox does not allow document.write() into the about:blank iframe.
-            // CSP headers are modified using the webRequest API to allow extension scripts to
-            // be loaded.
-            this._frame.srcdoc = await this._html(this._language);
-        } else {
-            // On Chromium, use document.write() since it allows the loading of extension scripts
-            // into the iframe without additional work.
-            const doc = this._frame.contentDocument!;
-            doc.open();
-            doc.write(await this._html(this._language));
-            doc.close();
-        }
-
         await this._client!.bind();
         return true;
     }
@@ -130,6 +127,6 @@ export default class UiFrame {
     unbind() {
         this._dirty = true;
         this._client?.unbind();
-        this._frame?.remove();
+        this._ui?.remove();
     }
 }

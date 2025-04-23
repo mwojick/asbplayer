@@ -10,8 +10,8 @@ import { SettingsProvider } from '@project/common/settings';
 import { VideoElement } from '../ui/components/VideoSelectUi';
 import Binding from '../services/binding';
 import UiFrame from '../services/ui-frame';
-import { fetchLocalization } from '../services/localization-fetcher';
 import { ExtensionSettingsStorage } from '../services/extension-settings-storage';
+import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
 export default class VideoSelectController {
     private readonly _bindings: Binding[];
@@ -25,26 +25,9 @@ export default class VideoSelectController {
         sendResponse: (response?: any) => void
     ) => void;
 
-    constructor(bindings: Binding[]) {
+    constructor(ctx: ContentScriptContext, bindings: Binding[]) {
         this._bindings = bindings;
-        this._frame = new UiFrame(
-            async (lang) => `<!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="utf-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1" />
-                    <title>asbplayer - Video Select</title>
-                    <style>
-                        @import url(${browser.runtime.getURL('/fonts/fonts.css')});
-                    </style>
-                </head>
-                <body>
-                    <div id="root" style="width:100%;height:100vh;"></div>
-                    <script type="application/json" id="loc">${JSON.stringify(await fetchLocalization(lang))}</script>
-                    <script type="module" src="${browser.runtime.getURL('/video-select-ui.js')}"></script>
-                </body>
-            </html>`
-        );
+        this._frame = new UiFrame(ctx, '/video-select-ui.html');
     }
 
     bind() {

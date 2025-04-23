@@ -76,6 +76,7 @@ import { shouldShowUpdateAlert } from './update-alert';
 import { mp3WorkerFactory } from './mp3-worker-factory';
 import { bufferToBase64 } from '@project/common/base64';
 import { pgsParserWorkerFactory } from './pgs-parser-worker-factory';
+import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
 let netflix = false;
 document.addEventListener('asbplayer-netflix-enabled', (e) => {
@@ -129,6 +130,7 @@ export default class Binding {
 
     readonly video: HTMLMediaElement;
     readonly hasPageScript: boolean;
+    readonly ctx: ContentScriptContext;
     readonly subtitleController: SubtitleController;
     readonly videoDataSyncController: VideoDataSyncController;
     readonly controlsController: ControlsController;
@@ -177,16 +179,17 @@ export default class Binding {
 
     private readonly frameId?: string;
 
-    constructor(video: HTMLMediaElement, hasPageScript: boolean, frameId?: string) {
+    constructor(ctx: ContentScriptContext, video: HTMLMediaElement, hasPageScript: boolean, frameId?: string) {
         this.video = video;
         this.hasPageScript = hasPageScript;
+        this.ctx = ctx;
         this.settings = new SettingsProvider(new ExtensionSettingsStorage());
         this.subtitleController = new SubtitleController(video, this.settings);
         this.videoDataSyncController = new VideoDataSyncController(this, this.settings);
         this.controlsController = new ControlsController(video);
         this.dragController = new DragController(video);
         this.keyBindings = new KeyBindings();
-        this.ankiUiController = new AnkiUiController();
+        this.ankiUiController = new AnkiUiController(this.ctx);
         this.notificationController = new NotificationController(this);
         this.mobileVideoOverlayController = new MobileVideoOverlayController(this, OffsetAnchor.top);
         this.subtitleController.onOffsetChange = () => this.mobileVideoOverlayController.updateModel();
