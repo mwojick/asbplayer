@@ -34,7 +34,7 @@ async function html(lang: string) {
             <body>
                 <div id="root" style="width:100%;height:100vh;"></div>
                 <script type="application/json" id="loc">${JSON.stringify(await fetchLocalization(lang))}</script>
-                <script type="module" src="${browser.runtime.getURL('/video-data-sync-ui.js')}"></script>
+                <script type="module" src="${browser.runtime.getURL('/content-scripts/esm/video-data-sync-ui.js')}"></script>
             </body>
             </html>`;
 }
